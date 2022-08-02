@@ -1,0 +1,53 @@
+<head>
+  <meta charset="UTF-8">
+  <title>Jannik</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="../util.js"></script>
+  <script>
+    function next_stage() {
+      var lvl_nr = parseInt($("#lvl_nr").val(), 10);
+      var pass = $("#pass").val();
+      if (isNaN(lvl_nr)) {
+        show_error("stage number must be a number");
+        return 0;
+      }
+      sha256(pass).then(function (pass_hash) {
+        sha256(pass_hash).then(function (double_pass_hash) {
+          $.get('stages/'+lvl_nr.toString()+'.html')
+          .fail(function (jqxhr, stat, err) {
+            if (jqxhr.status == 404) {
+              show_error("wrong stage number");
+            } else {
+              console.log(jqxhr.status)
+              console.log('stat:'+stat);
+              console.log('err:'+err);
+            }
+          })
+          .done(function (stage, stat, jqxhr) {
+            var arr = stage.split('\n\n');
+            if ( double_pass_hash != arr[0] ) {
+              show_error("wrong password");
+              return 0;
+            }
+            aesGcmDecrypt(arr[1], pass).then(function (decr) {
+              $("#text").html(decr);
+              $(":input").val("");
+              $("#lvl_tracker").html('stage: ' + lvl_nr.toString());
+              $("#err").remove();
+            });
+          })
+        });
+      });
+    }
+  </script>
+</head>
+<body>
+  <div id="lvl_tracker", style="float:right">stage: 0</div>
+  <div id= "text">Welcome, the password to stage 1 is "password123"</div>
+  <br>
+  stage number:<br>
+  <input id="lvl_nr"></input><br>
+  stage password:<br>
+  <input id="pass"></input>
+  <button onclick="next_stage();">goto stage</button>
+</body>
