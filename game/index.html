@@ -1,53 +1,89 @@
 <head>
-  <meta charset="UTF-8">
-  <title>Jannik</title>
+  <meta charset="UTF-8" />
+  <title>Jannik | Game</title>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="../util.js"></script>
-  <script>
-    function next_stage() {
-      var lvl_nr = parseInt($("#lvl_nr").val(), 10);
-      var pass = $("#pass").val();
-      if (isNaN(lvl_nr)) {
-        show_error("stage number must be a number");
-        return 0;
-      }
-      sha256(pass).then(function (pass_hash) {
-        sha256(pass_hash).then(function (double_pass_hash) {
-          $.get('stages/'+lvl_nr.toString()+'.html')
-          .fail(function (jqxhr, stat, err) {
-            if (jqxhr.status == 404) {
-              show_error("wrong stage number");
-            } else {
-              console.log(jqxhr.status)
-              console.log('stat:'+stat);
-              console.log('err:'+err);
-            }
-          })
-          .done(function (stage, stat, jqxhr) {
-            var arr = stage.split('\n\n');
-            if ( double_pass_hash != arr[0] ) {
-              show_error("wrong password");
-              return 0;
-            }
-            aesGcmDecrypt(arr[1], pass).then(function (decr) {
-              $("#text").html(decr);
-              $(":input").val("");
-              $("#lvl_tracker").html('stage: ' + lvl_nr.toString());
-              $("#err").remove();
-            });
-          })
-        });
-      });
-    }
-  </script>
+  <link rel="stylesheet" href="../styles.css" />
 </head>
-<body>
-  <div id="lvl_tracker", style="float:right">stage: 0</div>
-  <div id= "text">Welcome, the password to stage 1 is "password123"</div>
-  <br>
-  stage number:<br>
-  <input id="lvl_nr"></input><br>
-  stage password:<br>
-  <input id="pass"></input>
-  <button onclick="next_stage();">goto stage</button>
+<body class="flex justify-center items-center bg-gray-100">
+  <div class="absolute top-0 w-full flex justify-center z-10">
+    <a href="/about">about</a>
+    <span>|</span>
+    <a href="/game">game</a>
+  </div>
+
+  <form
+    id="form-stage"
+    class="w-lg bg-white px-8 py-6 rounded-lg shadow-lg max-w-md flex flex-col space-y-4"
+  >
+    <div class="flex justify-between space-x-4">
+      <div class="text-xl font-medium">Jannik Spiessens CTF</div>
+      <div class="whitespace-nowrap" id="lvl_tracker" , style="float: right">
+        stage: 0
+      </div>
+    </div>
+
+    <div class="text-md text-gray-800 w-full" id="text">
+      Welcome, the password to stage 1 is "password123"
+    </div>
+
+    <div>
+      <label for="lvl_nr" class="block text-sm font-medium text-gray-700">
+        Stage number
+      </label>
+      <div class="mt-1">
+        <input
+          id="lvl_nr"
+          name="lvl_nr"
+          type="number"
+          required="true"
+          min="0"
+          max="6"
+          class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label for="pass" class="block text-sm font-medium text-gray-700">
+        Stage password
+      </label>
+      <div class="mt-1">
+        <input
+          id="pass"
+          name="pass"
+          type="text"
+          required="true"
+          class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        />
+      </div>
+
+      <div
+        id="error"
+        class="text-red-500 text-xs w-full font-medium pt-1 hidden"
+      >
+        invalid password
+      </div>
+    </div>
+
+    <div>
+      <button
+        type="submit"
+        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        Unlock stage
+      </button>
+    </div>
+  </form>
+
+  <script>
+    document
+      .getElementById("form-stage")
+      .addEventListener("submit", (event) => {
+        event.preventDefault();
+        const data = new FormData(event.target);
+        const [stage, password] = [...data.entries()].map((entry) => entry[1]);
+        unlock_stage(stage, password);
+      });
+  </script>
 </body>
